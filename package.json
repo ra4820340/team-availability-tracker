@@ -1,0 +1,13 @@
+{
+  "name": "team-availability-tracker",
+  "version": "1.1.0",
+  "description": "Team availability dashboard with JWT authentication",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

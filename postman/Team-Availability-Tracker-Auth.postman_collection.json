@@ -1,0 +1,29 @@
+{
+  "info": {
+    "name": "Team Availability Tracker - JWT Auth",
+    "description": "Register/login, verify current user, and test protected team mutations. Save the token from login/register as {{token}} when using Bearer auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "memberId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('token', pm.response.json().token); }"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Demo User\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"DemoPass123!\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }
+    },
+    {
+      "name": "Login",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('token', pm.response.json().token); }"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@example.com\",\n  \"password\": \"DemoPass123!\"\n}" }, "url": "{{baseUrl}}/api/auth/login" }
+    },
+    { "name": "Current User (protected)", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/auth/me" } },
+    { "name": "Get Team (public read)", "request": { "method": "GET", "url": "{{baseUrl}}/api/team" } },
+    { "name": "Update Member Status (protected)", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"Busy\"\n}" }, "url": "{{baseUrl}}/api/team/{{memberId}}/status" } },
+    { "name": "Add Team Member (protected)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Taylor Example\",\n  \"role\": \"Developer\",\n  \"status\": \"Available\",\n  \"timezone\": \"Asia/Kolkata\"\n}" }, "url": "{{baseUrl}}/api/team" } },
+    { "name": "Logout (clears cookie)", "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/logout" } }
+  ]
+}
