@@ -1,0 +1,12 @@
+const express=require('express');const fs=require('fs');const path=require('path');
+const app=express(),PORT=process.env.PORT||3000,DATA=path.join(__dirname,'data/team.json'),SEED=path.join(__dirname,'data/team_seed.json'),VALID=['Available','Busy','Away'];
+app.use(express.json());app.use(express.static(path.join(__dirname,'public')));
+function read(){if(!fs.existsSync(DATA))fs.copyFileSync(SEED,DATA);return JSON.parse(fs.readFileSync(DATA,'utf8'))}function write(x){fs.writeFileSync(DATA,JSON.stringify(x,null,2))}
+app.get('/api/health',(_,r)=>r.json({status:'ok'}));
+app.get('/api/team',(q,r)=>{try{let x=read(),s=q.query.status,role=q.query.role,search=String(q.query.search||'').toLowerCase();if(s&&s!=='All')x=x.filter(m=>m.status===s);if(role&&role!=='All')x=x.filter(m=>m.role===role);if(search)x=x.filter(m=>`${m.name} ${m.role} ${m.timezone}`.toLowerCase().includes(search));r.json({count:x.length,members:x})}catch(e){r.status(500).json({error:'Unable to read team data'})}});
+app.patch('/api/team/:id/status',(q,r)=>{try{let {status}=q.body||{};if(!VALID.includes(status))return r.status(400).json({error:'Status must be Available, Busy, or Away'});let x=read(),m=x.find(a=>a.id===Number(q.params.id));if(!m)return r.status(404).json({error:'Team member not found'});m.status=status;m.updatedAt=new Date().toISOString();write(x);r.json({member:m,message:'Status updated'})}catch(e){r.status(500).json({error:'Unable to update status'})}});
+app.post('/api/team',(q,r)=>{let {name,role,status='Available',timezone='Asia/Kolkata'}=q.body||{};if(!String(name||'').trim()||!String(role||'').trim())return r.status(400).json({error:'Name and role are required'});if(!VALID.includes(status))return r.status(400).json({error:'Invalid status'});let x=read(),m={id:Math.max(0,...x.map(a=>a.id))+1,name:String(name).trim(),role:String(role).trim(),status,timezone};x.push(m);write(x);r.status(201).json({member:m})});
+app.delete('/api/team/:id',(q,r)=>{let x=read(),y=x.filter(m=>m.id!==Number(q.params.id));if(x.length===y.length)return r.status(404).json({error:'Team member not found'});write(y);r.json({message:'Deleted'})});
+app.post('/api/team/reset',(_,r)=>{let x=JSON.parse(fs.readFileSync(SEED,'utf8'));write(x);r.json({message:'Seed data restored',count:x.length})});
+app.get('/{*splat}',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(__dirname,'public/index.html')));
+app.listen(PORT,()=>console.log(`Team Availability Tracker running on port ${PORT}`));
